@@ -23,10 +23,14 @@ selected_langs = st.multiselect(
 )
 
 # Step 2: File uploader
-uploaded_file = st.file_uploader("Upload an image (JPG, PNG, GIF)", type=["jpg", "png", "jpeg", "gif"])
+uploaded_file = st.file_uploader(
+    "Upload an image (JPG, PNG, GIF)", type=["jpg", "png", "jpeg", "gif"]
+)
 
 if uploaded_file and selected_langs:
     image = Image.open(uploaded_file)
+
+    # OCR text extraction
     extracted_text = pytesseract.image_to_string(image, lang="eng")
     lines = [line.strip() for line in extracted_text.split("\n") if line.strip()]
 
@@ -36,30 +40,34 @@ if uploaded_file and selected_langs:
         translator = Translator()
 
         st.subheader("📋 Translation Table")
-        header_cols = ["EN"] + [LANGUAGES[lang].split('-')[0].upper() for lang in selected_langs]
+        header_cols = ["EN"] + [LANGUAGES[lang].split("-")[0].upper() for lang in selected_langs]
 
         table = []
         for line in lines:
             row = [line]
             for lang in selected_langs:
                 iso = LANGUAGES[lang]
-                translation = translator.translate(line, dest=iso)
-                row.append(translation.text)
+                try:
+                    translation = translator.translate(line, dest=iso)
+                    row.append(translation.text)
+                except Exception:
+                    row.append("⚠️ Translation failed")
             table.append(row)
 
-        # Show table
         st.table([header_cols] + table)
 
-        # Bonus: correction section
+        # Bonus: correction input
         st.subheader("✍️ Provide Corrected Translations")
         corrections = {}
         for row in table:
             st.markdown(f"**Original (EN):** {row[0]}")
             for i, lang in enumerate(selected_langs, start=1):
-                corrected = st.text_input(f"Corrected {lang}:", value=row[i], key=f"{row[0]}-{lang}")
+                corrected = st.text_input(
+                    f"Corrected {lang}:", value=row[i], key=f"{row[0]}-{lang}"
+                )
                 if corrected != row[i]:
                     corrections[(row[0], lang)] = corrected
 
         if corrections:
-            st.write("✅ Stored corrections (for future use):")
+            st.write("✅ Stored corrections for future use:")
             st.json(corrections)
