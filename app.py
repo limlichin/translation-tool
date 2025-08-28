@@ -3,7 +3,7 @@ from PIL import Image
 import pytesseract
 from googletrans import Translator
 
-# Language mapping (ISO 639-1 codes)
+# Language mapping (ISO 639-1 codes used by Google Translate)
 LANGUAGES = {
     "Bahasa Indonesia 🇮🇩": "id",
     "Bahasa Melayu 🇲🇾": "ms",
@@ -24,7 +24,7 @@ selected_langs = st.multiselect(
 
 # Step 2: File uploader
 uploaded_file = st.file_uploader(
-    "Upload an image (JPG, PNG, GIF)", type=["jpg", "png", "jpeg", "gif"]
+    "Upload an image (JPG, PNG, JPEG, GIF)", type=["jpg", "png", "jpeg", "gif"]
 )
 
 if uploaded_file and selected_langs:
@@ -37,18 +37,17 @@ if uploaded_file and selected_langs:
     if not lines:
         st.warning("⚠️ No text detected in the image.")
     else:
-        translator = Translator()
-
         st.subheader("📋 Translation Table")
         header_cols = ["EN"] + [LANGUAGES[lang].split("-")[0].upper() for lang in selected_langs]
 
         table = []
+        translator = Translator()
+
         for line in lines:
             row = [line]
             for lang in selected_langs:
-                iso = LANGUAGES[lang]
                 try:
-                    translation = translator.translate(line, dest=iso)
+                    translation = translator.translate(line, src="en", dest=LANGUAGES[lang])
                     row.append(translation.text)
                 except Exception:
                     row.append("⚠️ Translation failed")
